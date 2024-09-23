@@ -30,7 +30,7 @@ const DetailPage = () => {
           setData(response.data || {});
           setError("");
         } catch (err) {
-          setError("Erreur lors de la récupération des détails.");
+          setError("Error retrieving data.");
         }
       };
 
@@ -39,13 +39,13 @@ const DetailPage = () => {
   }, [type, id]);
 
   if (error) return <p>{error}</p>;
-  if (!data) return <p>Chargement...</p>;
+  if (!data) return <p>Loading...</p>;
 
   return (
     <div>
-      <h1>Détails de {data.name || data.title}</h1>
+      <h1>Details for {data.name || data.title}</h1>
       <pre>{JSON.stringify(data, null, 2)}</pre>
-      <Link href="/">Retour</Link>
+      <Link href="/">Go back</Link>
     </div>
   );
 };

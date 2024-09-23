@@ -22,7 +22,7 @@ const Home = () => {
     event.preventDefault(); // Prevent form from refreshing the page
 
     if (!query) {
-      setError("Veuillez entrer un nom à rechercher.");
+      setError("Please enter a name to search.");
       return;
     }
 
@@ -61,7 +61,7 @@ const Home = () => {
 
       setError("");
     } catch (err) {
-      setError("Erreur lors de la récupération des données.");
+      setError("Error retrieving data.");
       setResults([]);
     } finally {
       setLoading(false);
@@ -70,31 +70,31 @@ const Home = () => {
 
   return (
     <div>
-      <h1>Recherche dans SWAPI</h1>
+      <h1>Star Wars Rebels Alliance Search System</h1>
       <button onClick={() => setWookiee(!wookieee)}>
         Turn into {wookieee ? "basic language" : "wookiee"}
       </button>
       <form onSubmit={handleSearch}>
         <input
           type="text"
-          placeholder="Nom à rechercher"
+          placeholder="Name to research"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           required
         />
         <select value={type} onChange={(e) => setType(e.target.value)} required>
-          <option value="people">Personnes</option>
+          <option value="people">People</option>
           <option value="films">Films</option>
-          <option value="planets">Planètes</option>
-          <option value="starships">Vaisseaux</option>
-          <option value="vehicles">Véhicules</option>
-          <option value="species">Espèces</option>
+          <option value="planets">Planets</option>
+          <option value="starships">Starships</option>
+          <option value="vehicles">Vehicles</option>
+          <option value="species">Species</option>
         </select>
         <button type="submit" disabled={loading}>
-          {loading ? "Recherche..." : "Rechercher"}
+          {loading ? "Searching..." : "Search"}
         </button>
       </form>
-      {error && <p>{error}</p>} {noResults && <p>Aucun résultat trouvé.</p>}
+      {error && <p>{error}</p>} {noResults && <p>No results found.</p>}
       <ul>
         {results.map((result) => (
           <li key={result.name || result.title}>
