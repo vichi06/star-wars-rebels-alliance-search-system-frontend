@@ -1,95 +1,93 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+import { useState } from "react";
+import axios from "axios";
+import Link from "next/link";
 
-export default function Home() {
+const Home = () => {
+  const [query, setQuery] = useState("");
+  const [type, setType] = useState("people");
+  const [results, setResults] = useState<any[]>([]);
+  const [error, setError] = useState("");
+  const [noResults, setNoResults] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSearch = async (event: React.FormEvent) => {
+    event.preventDefault(); // Prevent form from refreshing the page
+
+    if (!query) {
+      setError("Veuillez entrer un nom à rechercher.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setNoResults(false);
+
+    const auth = "Basic " + btoa("Luke:DadSucks"); // Encode les identifiants en base64
+
+    try {
+      const response = await axios.get(
+        `http://localhost:3001/search?type=${type}&query=${query}`,
+        {
+          headers: {
+            Authorization: auth, // Ajouter l'en-tête d'authentification
+          },
+        }
+      );
+      const data = response.data.results || [];
+
+      if (data.length === 0) {
+        setNoResults(true);
+        setResults([]);
+      } else {
+        setNoResults(false);
+        setResults(data);
+      }
+
+      setError("");
+    } catch (err) {
+      setError("Erreur lors de la récupération des données.");
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
+    <div>
+      <h1>Recherche dans SWAPI</h1>
+      <form onSubmit={handleSearch}>
+        <input
+          type="text"
+          placeholder="Nom à rechercher"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          required
         />
-        <ol>
-          <li>
-            Get started by editing <code>src/app/page.tsx</code>.
+        <select value={type} onChange={(e) => setType(e.target.value)} required>
+          <option value="people">Personnes</option>
+          <option value="films">Films</option>
+          <option value="planets">Planètes</option>
+          <option value="starships">Vaisseaux</option>
+          <option value="vehicles">Véhicules</option>
+          <option value="species">Espèces</option>
+        </select>
+        <button type="submit" disabled={loading}>
+          {loading ? "Recherche..." : "Rechercher"}
+        </button>
+      </form>
+      {error && <p>{error}</p>} {noResults && <p>Aucun résultat trouvé.</p>}
+      <ul>
+        {results.map((result) => (
+          <li key={result.name || result.title}>
+            <Link href={`/${type}/${result.url.split("/").slice(-2, -1)[0]}`}>
+              {result.name || result.title}
+            </Link>
           </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        ))}
+      </ul>
     </div>
   );
-}
+};
+
+export default Home;
