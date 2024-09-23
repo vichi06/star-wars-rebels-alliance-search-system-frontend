@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
 import { mapWookieeToStandard } from "../../utils/translations";
+import "./page.module.css";
 
 const Home = () => {
   const [query, setQuery] = useState("");

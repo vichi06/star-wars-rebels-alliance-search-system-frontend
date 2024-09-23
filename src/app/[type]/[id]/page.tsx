@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams, useSearchParams } from "next/navigation"; // Update import
 import Link from "next/link";
+import styles from "./page.module.css";
 
 const DetailPage = () => {
   const { type, id } = useParams(); // Use useParams to get dynamic route parameters
@@ -44,7 +45,7 @@ const DetailPage = () => {
   return (
     <div>
       <h1>Details for {data.name || data.title}</h1>
-      <pre>{JSON.stringify(data, null, 2)}</pre>
+      <pre className={styles.data}>{JSON.stringify(data, null, 2)}</pre>
       <Link href="/">Go back</Link>
     </div>
   );
