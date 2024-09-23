@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
+import { mapWookieeToStandard } from "../../utils/translations";
 
 const Home = () => {
   const [query, setQuery] = useState("");
@@ -10,6 +11,12 @@ const Home = () => {
   const [error, setError] = useState("");
   const [noResults, setNoResults] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [wookieee, setWookiee] = useState(false);
+
+  useEffect(() => {
+    setQuery("");
+    setResults([]);
+  }, [wookieee]);
 
   const handleSearch = async (event: React.FormEvent) => {
     event.preventDefault(); // Prevent form from refreshing the page
@@ -27,14 +34,22 @@ const Home = () => {
 
     try {
       const response = await axios.get(
-        `http://localhost:3001/search?type=${type}&query=${query}`,
+        `http://localhost:3001/search?type=${type}&query=${query}${
+          wookieee ? "&format=wookiee" : ""
+        }`,
         {
           headers: {
             Authorization: auth, // Ajouter l'en-tête d'authentification
           },
         }
       );
-      const data = response.data.results || [];
+      let data = response.data || [];
+
+      if (wookieee)
+        data = data.rcwochuanaoc.map((result: any) =>
+          mapWookieeToStandard(result, type)
+        );
+      else data = data.results;
 
       if (data.length === 0) {
         setNoResults(true);
@@ -56,6 +71,9 @@ const Home = () => {
   return (
     <div>
       <h1>Recherche dans SWAPI</h1>
+      <button onClick={() => setWookiee(!wookieee)}>
+        Turn into {wookieee ? "basic language" : "wookiee"}
+      </button>
       <form onSubmit={handleSearch}>
         <input
           type="text"
@@ -80,7 +98,11 @@ const Home = () => {
       <ul>
         {results.map((result) => (
           <li key={result.name || result.title}>
-            <Link href={`/${type}/${result.url.split("/").slice(-2, -1)[0]}`}>
+            <Link
+              href={`/${type}/${result.url.split("/").slice(-2, -1)[0]}${
+                wookieee ? "?format=wookiee" : ""
+              }`}
+            >
               {result.name || result.title}
             </Link>
           </li>

@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams } from "next/navigation"; // Update import
+import { useParams, useSearchParams } from "next/navigation"; // Update import
 import Link from "next/link";
 
 const DetailPage = () => {
   const { type, id } = useParams(); // Use useParams to get dynamic route parameters
+  const searchParams = useSearchParams();
+  const format = searchParams.get("format");
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState("");
 
@@ -16,15 +18,15 @@ const DetailPage = () => {
 
       const fetchData = async () => {
         try {
-          const response = await axios.get(
-            `http://localhost:3001/details?type=${type}&id=${id}`,
-            {
-              headers: {
-                Authorization: auth,
-              },
-            }
-          );
-          console.log(response);
+          let apiUrl = `http://localhost:3001/details?type=${type}&id=${id}`;
+
+          if (format === "wookiee") apiUrl += "&format=wookiee";
+
+          const response = await axios.get(apiUrl, {
+            headers: {
+              Authorization: auth,
+            },
+          });
           setData(response.data || {});
           setError("");
         } catch (err) {
