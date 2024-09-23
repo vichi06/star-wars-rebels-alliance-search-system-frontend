@@ -5,6 +5,22 @@ import Link from "next/link";
 import { mapWookieeToStandard } from "../../utils/translations";
 import "./page.module.css";
 
+// Debounce function
+const debounce = <T extends (...args: any[]) => any>(
+  func: T,
+  delay: number
+) => {
+  let timeoutId: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    timeoutId = setTimeout(() => {
+      func(...args);
+    }, delay);
+  };
+};
+
 const Home = () => {
   const [query, setQuery] = useState("");
   const [type, setType] = useState("people");
@@ -14,16 +30,11 @@ const Home = () => {
   const [loading, setLoading] = useState(false);
   const [wookieee, setWookiee] = useState(false);
 
-  useEffect(() => {
-    setQuery("");
-    setResults([]);
-  }, [wookieee]);
-
-  const handleSearch = async (event: React.FormEvent) => {
-    event.preventDefault(); // Prevent form from refreshing the page
-
+  // Debounced search function
+  const debouncedSearch = debounce(async (query: string) => {
     if (!query) {
       setError("Please enter a name to search.");
+      setResults([]);
       return;
     }
 
@@ -46,11 +57,13 @@ const Home = () => {
       );
       let data = response.data || [];
 
-      if (wookieee)
+      if (wookieee) {
         data = data.rcwochuanaoc.map((result: any) =>
           mapWookieeToStandard(result, type)
         );
-      else data = data.results;
+      } else {
+        data = data.results;
+      }
 
       if (data.length === 0) {
         setNoResults(true);
@@ -67,7 +80,12 @@ const Home = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, 300); // Adjust the debounce delay (in ms) as needed
+
+  // Effect to call debounced search on query change
+  useEffect(() => {
+    debouncedSearch(query);
+  }, [query, type, wookieee]);
 
   return (
     <div>
@@ -75,7 +93,7 @@ const Home = () => {
       <button onClick={() => setWookiee(!wookieee)}>
         Turn into {wookieee ? "basic language" : "wookiee"}
       </button>
-      <form onSubmit={handleSearch}>
+      <form onSubmit={(e) => e.preventDefault()}>
         <input
           type="text"
           placeholder="Name to research"
