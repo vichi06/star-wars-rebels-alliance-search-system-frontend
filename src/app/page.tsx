@@ -28,7 +28,7 @@ const Home = () => {
   const [error, setError] = useState<string>("");
   const [noResults, setNoResults] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
-  const [wookieee, setWookiee] = useState<boolean>(false);
+  const [wookiee, setWookiee] = useState<boolean>(false);
 
   // Using a ref to store the current AbortController for cancellation
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -62,7 +62,7 @@ const Home = () => {
     try {
       const response = await axios.get(
         `http://localhost:3001/search?type=${type}&query=${query}${
-          wookieee ? "&format=wookiee" : ""
+          wookiee ? "&format=wookiee" : ""
         }`,
         {
           headers: {
@@ -73,7 +73,7 @@ const Home = () => {
       );
       let data = response.data || [];
 
-      if (wookieee) {
+      if (wookiee) {
         data = data.rcwochuanaoc.map((result: any) =>
           mapWookieeToStandard(result, type)
         );
@@ -105,13 +105,13 @@ const Home = () => {
   // Effect to call debounced search on query change
   useEffect(() => {
     debouncedSearch(query);
-  }, [query, type, wookieee]);
+  }, [query, type, wookiee]);
 
   return (
     <div>
       <h1>Star Wars Rebels Alliance Search System</h1>
-      <button onClick={() => setWookiee(!wookieee)}>
-        Turn into {wookieee ? "basic language" : "wookiee"}
+      <button onClick={() => setWookiee(!wookiee)}>
+        Turn into {wookiee ? "basic language" : "wookiee"}
       </button>
       <form onSubmit={(e) => e.preventDefault()}>
         <input
@@ -139,7 +139,7 @@ const Home = () => {
           <li key={result.name || result.title}>
             <Link
               href={`/${type}/${result.url.split("/").slice(-2, -1)[0]}${
-                wookieee ? "?format=wookiee" : ""
+                wookiee ? "?format=wookiee" : ""
               }`}
             >
               {result.name || result.title}
