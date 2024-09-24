@@ -6,6 +6,7 @@ import { useParams, useSearchParams } from "next/navigation"; // Update import
 import Link from "next/link";
 import styles from "./page.module.css";
 import TypeRenderer from "@/app/components/TypeRenderer";
+import { mapWookieeToStandard } from "../../../../utils/translations";
 
 const DetailPage = () => {
   const { type, id } = useParams(); // Use useParams to get dynamic route parameters
@@ -22,14 +23,25 @@ const DetailPage = () => {
         try {
           let apiUrl = `http://localhost:3001/details?type=${type}&id=${id}`;
 
-          if (format === "wookiee") apiUrl += "&format=wookiee";
+          let wookiee = false;
+          if (format === "wookiee") {
+            apiUrl += "&format=wookiee";
+            wookiee = true;
+          }
 
           const response = await axios.get(apiUrl, {
             headers: {
               Authorization: auth,
             },
           });
-          setData(response.data || {});
+
+          if (wookiee) {
+            const data = response.data;
+            setData(mapWookieeToStandard(data, type as string));
+          } else {
+            setData(response.data || {});
+          }
+
           setError("");
         } catch (err) {
           setError("Error retrieving data.");
