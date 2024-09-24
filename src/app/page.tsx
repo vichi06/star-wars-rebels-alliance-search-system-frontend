@@ -1,9 +1,11 @@
 "use client";
+
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { mapWookieeToStandard } from "../../utils/translations";
+
 import "./page.module.css";
 
 // Debounce function
@@ -22,12 +24,21 @@ const debounce = <T extends (...args: any[]) => any>(
   };
 };
 
-const Home = () => {
+// Result type based on the expected API response
+interface Result {
+  name?: string;
+  title?: string;
+  url: string;
+}
+
+// Main Home component
+const Home: React.FC = () => {
   const searchParams = useSearchParams();
-  const urlQuery = searchParams.get("query");
-  const [query, setQuery] = useState<string>("");
+  const urlQuery = searchParams.get("query") || "";
+
+  const [query, setQuery] = useState<string>(urlQuery);
   const [type, setType] = useState<string>("people");
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<Result[]>([]);
   const [error, setError] = useState<string>("");
   const [noResults, setNoResults] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
@@ -38,7 +49,6 @@ const Home = () => {
 
   // Debounced search function
   const debouncedSearch = debounce(async (query: string) => {
-    // Clear the results if the query is empty
     if (!query) {
       setResults([]);
       setNoResults(false);
@@ -56,11 +66,10 @@ const Home = () => {
       abortControllerRef.current.abort();
     }
 
-    // Create a new abort controller for the new request
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    const auth = "Basic " + btoa("Luke:DadSucks"); // Encode les identifiants en base64
+    const auth = "Basic " + btoa("Luke:DadSucks"); // Encode credentials in base64
 
     try {
       const response = await axios.get(
@@ -69,20 +78,18 @@ const Home = () => {
         }`,
         {
           headers: {
-            Authorization: auth, // Ajouter l'en-tête d'authentification
+            Authorization: auth,
           },
-          signal: controller.signal, // Pass the abort signal
+          signal: controller.signal,
         }
       );
 
-      let data = response.data || [];
+      let data: Result[] = response.data.results || [];
 
-      if (wookiee) {
-        data = data.rcwochuanaoc.map((result: any) =>
+      if (wookiee && response.data.rcwochuanaoc) {
+        data = response.data.rcwochuanaoc.map((result: any) =>
           mapWookieeToStandard(result, type)
         );
-      } else {
-        data = data.results;
       }
 
       if (data.length === 0) {
@@ -108,9 +115,7 @@ const Home = () => {
 
   // Effect to call debounced search on URL query change
   useEffect(() => {
-    if (urlQuery) {
-      setQuery(urlQuery); // Set the query state to the URL query
-    }
+    setQuery(urlQuery); // Set the query state to the URL query
   }, [urlQuery]);
 
   // Effect to call debounced search when query, type, or wookiee change
@@ -148,7 +153,7 @@ const Home = () => {
       {noResults && <p>No results found.</p>}
       <ul>
         {results.map((result) => (
-          <li key={result.name || result.title}>
+          <li key={result.url}>
             <Link
               href={`/${type}/${result.url.split("/").slice(-2, -1)[0]}${
                 wookiee ? "?format=wookiee" : ""

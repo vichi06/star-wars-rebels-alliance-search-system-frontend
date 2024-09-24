@@ -1,14 +1,14 @@
 // components/TypeRenderer.tsx
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 import PeopleView from "./PeopleView";
 import FilmsView from "./FilmsView";
 import SpeciesView from "./SpeciesView";
 import StarshipsView from "./StarshipsView";
 import PlanetsView from "./PlanetsView";
 import VehiclesView from "./VehiclesView";
-import axios from "axios";
 
-// Create a map between `type` and component
+// Mapping between type and corresponding components
 const viewComponents: Record<string, React.FC<any>> = {
   people: PeopleView,
   films: FilmsView,
@@ -20,100 +20,73 @@ const viewComponents: Record<string, React.FC<any>> = {
 
 interface TypeRendererProps {
   type: string;
-  data: any;
+  data: any; // Consider refining this type to a more specific type if possible
 }
 
-// Helper function to extract last two segments of the URL
-const extractLastTwoSegments = (url: string) => {
-  const segments = url.split("/").filter(Boolean); // Split by '/' and filter out empty strings
-  return segments.slice(-2); // Return the last two segments joined by '/'
+// Extract the last two segments from a URL
+const extractLastTwoSegments = (url: string): string[] => {
+  const segments = url.split("/").filter(Boolean);
+  return segments.slice(-2);
 };
 
+// Fetch data from the API based on the URL
+const fetchDataFromApi = async (url: string): Promise<string | null> => {
+  const [type, id] = extractLastTwoSegments(url);
+  const apiUrl = `http://localhost:3001/details?type=${type}&id=${id}`;
+  const auth = "Basic " + btoa("Luke:DadSucks");
+
+  try {
+    const response = await axios.get(apiUrl, {
+      headers: { Authorization: auth },
+    });
+    return response.data.name || response.data.title;
+  } catch (err) {
+    console.error(err);
+    return null;
+  }
+};
+
+// Main TypeRenderer component
 const TypeRenderer: React.FC<TypeRendererProps> = ({ type, data }) => {
-  const Component = viewComponents[type]; // Get the appropriate component
+  const Component = viewComponents[type];
 
   if (!Component) {
-    return <div>Type not supported</div>; // Handle unsupported types
+    return <div>Type not supported</div>;
   }
 
-  // State to hold transformed data
-  const [transformedData, setTransformedData] = useState({ ...data }); // Create a shallow copy of data
-  const [loading, setLoading] = useState(true);
+  const [transformedData, setTransformedData] = useState<any>({ ...data });
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const transformData = async () => {
-      const newData = { ...data }; // Create a new object to avoid mutating the original data
+      const newData = { ...data };
 
-      // Helper function to transform a value (URL or array of URLs)
-      const transformValue = async (value: any) => {
+      // Helper function to transform the value
+      const transformValue = async (value: any): Promise<any> => {
         if (Array.isArray(value)) {
-          // If the value is an array, process each element
-          const transformedArray = await Promise.all(
-            value.map(async (item) => {
-              if (typeof item === "string" && item.startsWith("http")) {
-                const [type, id] = extractLastTwoSegments(item);
-                const fetchData = async () => {
-                  try {
-                    let apiUrl = `http://localhost:3001/details?type=${type}&id=${id}`;
-                    const auth = "Basic " + btoa("Luke:DadSucks"); // Encode the credentials in base64
-
-                    const response = await axios.get(apiUrl, {
-                      headers: {
-                        Authorization: auth,
-                      },
-                    });
-
-                    return response.data.name || response.data.title; // Return the name from the API response
-                  } catch (err) {
-                    console.error(err); // Handle error appropriately
-                    return null; // Return null in case of an error
-                  }
-                };
-                return await fetchData(); // Await the result of the fetch
-              }
-              return item; // Return the item if it's not a URL
-            })
-          );
-
-          return transformedArray; // Return the transformed array
-        } else if (typeof value === "string" && value.startsWith("http")) {
-          // If it's a single URL
-          const [type, id] = extractLastTwoSegments(value);
-          const fetchData = async () => {
-            try {
-              let apiUrl = `http://localhost:3001/details?type=${type}&id=${id}`;
-              const auth = "Basic " + btoa("Luke:DadSucks"); // Encode the credentials in base64
-
-              const response = await axios.get(apiUrl, {
-                headers: {
-                  Authorization: auth,
-                },
-              });
-              return response.data.name || response.data.title; // Return the name from the API response
-            } catch (err) {
-              console.error(err); // Handle error appropriately
-              return null; // Return null in case of an error
-            }
-          };
-          return await fetchData(); // Await the result of the fetch
+          return await Promise.all(value.map((item) => transformValue(item)));
         }
 
-        return value; // Return value as is if it doesn't match
+        if (typeof value === "string" && value.startsWith("http")) {
+          return await fetchDataFromApi(value);
+        }
+
+        return value;
       };
 
-      // Iterate over the keys in newData
+      // Transform each key in newData
       for (const key of Object.keys(newData)) {
-        newData[key] = await transformValue(newData[key]); // Transform each value
+        newData[key] = await transformValue(newData[key]);
       }
 
-      setTransformedData(newData); // Set the transformed data in state
+      setTransformedData(newData);
       setLoading(false);
     };
 
-    transformData(); // Call the function to transform data
-  }, [data]); // Depend on data, rerun if data changes
+    transformData();
+  }, [data]);
 
-  return loading ? <p>Loading</p> : <Component {...transformedData} />; // Pass data as props to the component
+  return loading ? <p>Loading...</p> : <Component {...transformedData} />;
 };
 
 export default TypeRenderer;

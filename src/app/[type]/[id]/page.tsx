@@ -2,31 +2,37 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams, useSearchParams } from "next/navigation"; // Update import
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import styles from "./page.module.css";
 import TypeRenderer from "@/app/components/TypeRenderer";
 import { mapWookieeToStandard } from "../../../../utils/translations";
 
-const DetailPage = () => {
-  const { type, id } = useParams(); // Use useParams to get dynamic route parameters
+// Define the expected data structure
+interface DetailData {
+  name?: string;
+  title?: string;
+  [key: string]: any; // Allow additional properties as needed
+}
+
+const DetailPage: React.FC = () => {
+  const { type, id } = useParams<{ type: string; id: string }>(); // Use useParams with explicit types
   const searchParams = useSearchParams();
   const format = searchParams.get("format");
-  const [data, setData] = useState<any>(null);
-  const [error, setError] = useState("");
+
+  const [data, setData] = useState<DetailData | null>(null);
+  const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    if (type && id) {
-      const auth = "Basic " + btoa("Luke:DadSucks"); // Encode les identifiants en base64
+    const fetchData = async () => {
+      if (type && id) {
+        const auth = "Basic " + btoa("Luke:DadSucks"); // Encode credentials in base64
 
-      const fetchData = async () => {
         try {
           let apiUrl = `http://localhost:3001/details?type=${type}&id=${id}`;
+          let isWookieeFormat = format === "wookiee"; // Determine if Wookiee format is needed
 
-          let wookiee = false;
-          if (format === "wookiee") {
+          if (isWookieeFormat) {
             apiUrl += "&format=wookiee";
-            wookiee = true;
           }
 
           const response = await axios.get(apiUrl, {
@@ -35,22 +41,24 @@ const DetailPage = () => {
             },
           });
 
-          if (wookiee) {
-            const data = response.data;
-            setData(mapWookieeToStandard(data, type as string));
+          const responseData = response.data;
+
+          // Process data based on format
+          if (isWookieeFormat) {
+            setData(mapWookieeToStandard(responseData, type));
           } else {
-            setData(response.data || {});
+            setData(responseData || {});
           }
 
-          setError("");
+          setError(""); // Clear any previous errors
         } catch (err) {
           setError("Error retrieving data.");
         }
-      };
+      }
+    };
 
-      fetchData();
-    }
-  }, [type, id]);
+    fetchData();
+  }, [type, id, format]); // Add format to dependency array to refetch if it changes
 
   if (error) return <p>{error}</p>;
   if (!data) return <p>Loading...</p>;
@@ -58,7 +66,7 @@ const DetailPage = () => {
   return (
     <div>
       <h1>Details for {data.name || data.title}</h1>
-      <TypeRenderer type={type as string} data={data} />
+      <TypeRenderer type={type} data={data} />
       <Link href="/">Go back</Link>
     </div>
   );
