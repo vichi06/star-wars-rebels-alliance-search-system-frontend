@@ -5,6 +5,7 @@ import axios from "axios";
 import { useParams, useSearchParams } from "next/navigation"; // Update import
 import Link from "next/link";
 import styles from "./page.module.css";
+import TypeRenderer from "@/app/components/TypeRenderer";
 
 const DetailPage = () => {
   const { type, id } = useParams(); // Use useParams to get dynamic route parameters
@@ -45,7 +46,7 @@ const DetailPage = () => {
   return (
     <div>
       <h1>Details for {data.name || data.title}</h1>
-      <pre className={styles.data}>{JSON.stringify(data, null, 2)}</pre>
+      <TypeRenderer type={type as string} data={data} />
       <Link href="/">Go back</Link>
     </div>
   );
