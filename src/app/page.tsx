@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
 import { mapWookieeToStandard } from "../../utils/translations";
@@ -22,25 +22,40 @@ const debounce = <T extends (...args: any[]) => any>(
 };
 
 const Home = () => {
-  const [query, setQuery] = useState("");
-  const [type, setType] = useState("people");
+  const [query, setQuery] = useState<string>("");
+  const [type, setType] = useState<string>("people");
   const [results, setResults] = useState<any[]>([]);
-  const [error, setError] = useState("");
-  const [noResults, setNoResults] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [wookieee, setWookiee] = useState(false);
+  const [error, setError] = useState<string>("");
+  const [noResults, setNoResults] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [wookieee, setWookiee] = useState<boolean>(false);
+
+  // Using a ref to store the current AbortController for cancellation
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Debounced search function
   const debouncedSearch = debounce(async (query: string) => {
+    // Clear the results if the query is empty
     if (!query) {
-      setError("Please enter a name to search.");
       setResults([]);
+      setNoResults(false);
+      setError("");
+      setLoading(false);
       return;
     }
 
     setLoading(true);
     setError("");
     setNoResults(false);
+
+    // Cancel the previous request if it exists
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create a new abort controller for the new request
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     const auth = "Basic " + btoa("Luke:DadSucks"); // Encode les identifiants en base64
 
@@ -53,6 +68,7 @@ const Home = () => {
           headers: {
             Authorization: auth, // Ajouter l'en-tête d'authentification
           },
+          signal: controller.signal, // Pass the abort signal
         }
       );
       let data = response.data || [];
@@ -75,8 +91,12 @@ const Home = () => {
 
       setError("");
     } catch (err) {
-      setError("Error retrieving data.");
-      setResults([]);
+      if (axios.isCancel(err)) {
+        console.log("Previous request canceled");
+      } else {
+        setError("Error retrieving data.");
+        setResults([]);
+      }
     } finally {
       setLoading(false);
     }
