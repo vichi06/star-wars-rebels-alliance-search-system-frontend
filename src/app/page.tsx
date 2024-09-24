@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { mapWookieeToStandard } from "../../utils/translations";
 import "./page.module.css";
 
@@ -22,6 +23,8 @@ const debounce = <T extends (...args: any[]) => any>(
 };
 
 const Home = () => {
+  const searchParams = useSearchParams();
+  const urlQuery = searchParams.get("query");
   const [query, setQuery] = useState<string>("");
   const [type, setType] = useState<string>("people");
   const [results, setResults] = useState<any[]>([]);
@@ -71,6 +74,7 @@ const Home = () => {
           signal: controller.signal, // Pass the abort signal
         }
       );
+
       let data = response.data || [];
 
       if (wookiee) {
@@ -102,7 +106,14 @@ const Home = () => {
     }
   }, 300); // Adjust the debounce delay (in ms) as needed
 
-  // Effect to call debounced search on query change
+  // Effect to call debounced search on URL query change
+  useEffect(() => {
+    if (urlQuery) {
+      setQuery(urlQuery); // Set the query state to the URL query
+    }
+  }, [urlQuery]);
+
+  // Effect to call debounced search when query, type, or wookiee change
   useEffect(() => {
     debouncedSearch(query);
   }, [query, type, wookiee]);
@@ -133,7 +144,8 @@ const Home = () => {
           {loading ? "Searching..." : "Search"}
         </button>
       </form>
-      {error && <p>{error}</p>} {noResults && <p>No results found.</p>}
+      {error && <p>{error}</p>}
+      {noResults && <p>No results found.</p>}
       <ul>
         {results.map((result) => (
           <li key={result.name || result.title}>
