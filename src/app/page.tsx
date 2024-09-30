@@ -49,6 +49,11 @@ const Home: React.FC = () => {
 
   // Debounced search function
   const debouncedSearch = debounce(async (query: string) => {
+    // Cancel the previous request if it exists
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
     if (!query) {
       setResults([]);
       setNoResults(false);
@@ -60,11 +65,6 @@ const Home: React.FC = () => {
     setLoading(true);
     setError("");
     setNoResults(false);
-
-    // Cancel the previous request if it exists
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
 
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -112,11 +112,6 @@ const Home: React.FC = () => {
       setLoading(false);
     }
   }, 300); // Adjust the debounce delay (in ms) as needed
-
-  // Effect to call debounced search on URL query change
-  useEffect(() => {
-    setQuery(urlQuery); // Set the query state to the URL query
-  }, [urlQuery]);
 
   // Effect to call debounced search when query, type, or wookiee change
   useEffect(() => {
